@@ -1,0 +1,91 @@
+{
+    "name": "increamental_pipeline_multiple_files",
+    "properties": {
+        "activities": [
+            {
+                "name": "ForEach1",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "get_table_info",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@activity('get_table_info').output.value",
+                        "type": "Expression"
+                    },
+                    "isSequential": false,
+                    "activities": [
+                        {
+                            "name": "Execute Pipeline1",
+                            "type": "ExecutePipeline",
+                            "dependsOn": [],
+                            "policy": {
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "pipeline": {
+                                    "referenceName": "iterator_multiple_file_incremental_load",
+                                    "type": "PipelineReference"
+                                },
+                                "waitOnCompletion": true,
+                                "parameters": {
+                                    "SourceTableName": {
+                                        "value": "@item().source_table_names",
+                                        "type": "Expression"
+                                    },
+                                    "WaterMarkTable": {
+                                        "value": "@item().watermark_table",
+                                        "type": "Expression"
+                                    },
+                                    "TargetTableName": {
+                                        "value": "@item().target_table_names",
+                                        "type": "Expression"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "get_table_info",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "AzureSqlSource",
+                        "sqlReaderQuery": {
+                            "value": "select 'Employee_Source' as source_table_names, 'WatermarkTable' as watermark_table, 'Employee_Target' as target_table_names\nunion \nselect 'Employee_Sale_Source' as source_table_names, 'WatermarkTable' as watermark_table, 'Employee_Sale_Target' as target_table_names",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "incremental_datasets",
+                        "type": "DatasetReference"
+                    },
+                    "firstRowOnly": false
+                }
+            }
+        ],
+        "annotations": [],
+        "lastPublishTime": "2024-11-20T15:53:28Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
